@@ -49,3 +49,4 @@ $RECYCLE.BIN/
 # Docker volumes and local data
 yb_data/
 temporal_pg_data/
+

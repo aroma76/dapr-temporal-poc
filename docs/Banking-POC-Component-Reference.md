@@ -74,7 +74,7 @@ This is the **parent project descriptor** for the entire monorepo. Maven reads t
 | Setting | Value | Purpose |
 |---|---|---|
 | `groupId` | `com.bank` | The Java package namespace for the whole project |
-| `artifactId` | `banking-poc-parent` | Name of this root project |
+| `artifactId` | `dapr-temporal-poc` | Name of this root project |
 | `packaging` | `pom` | Signals this is a parent POM, not a runnable JAR |
 | `modules` | `withdrawal-service`, `transaction-service` | Tells Maven to build both child services when run from the root |
 | `java.version` | `17` | Java 17 LTS is required by Spring Boot 3 |

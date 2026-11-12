@@ -1,5 +1,7 @@
 # Dapr Temporal POC: Temporal, Dapr Pub/Sub, and YugabyteDB
 
+[![GitHub Repo](https://img.shields.io/badge/GitHub-aroma76%2Fdapr--temporal--poc-blue?logo=github)](https://github.com/aroma76/dapr-temporal-poc)
+
 A simple, beginner-friendly Banking Proof of Concept (POC) demonstrating **Temporal Orchestration**, **Dapr Event-Driven Pub/Sub**, and **YugabyteDB Distributed SQL**.
 
 ---
@@ -98,7 +100,7 @@ A simple, beginner-friendly Banking Proof of Concept (POC) demonstrating **Tempo
 ## 3. Minimal Project Structure
 
 ```
-banking-poc/
+dapr-temporal-poc/
 ├── pom.xml                               # Parent Maven aggregator
 ├── docker-compose.yml                    # Temporal, YugabyteDB, Redis, Temporal UI
 ├── Banking_POC.postman_collection.json   # Ready-to-use Postman test collection

@@ -79,8 +79,8 @@ The entire system runs as **9 Docker containers** defined in [`docker-compose.ym
 | 5 | `temporal-ui` | `temporalio/ui:2.26.0` | `8080` | Workflow visual dashboard |
 | 6 | `withdrawal-dapr` | `daprio/daprd:1.13.0` | `3500`, `50001` | Dapr sidecar for the Withdrawal Service |
 | 7 | `transaction-dapr` | `daprio/daprd:1.13.0` | `3501`, `50002` | Dapr sidecar for the Transaction Service |
-| 8 | `transaction-service` | `withdrawal-service/Dockerfile` (`eclipse-temurin:17-jre-alpine`) | `8082` | Transaction Spring Boot Microservice |
-| 9 | `withdrawal-service` | `transaction-service/Dockerfile` (`eclipse-temurin:17-jre-alpine`) | `8081` | Withdrawal Spring Boot Microservice |
+| 8 | `transaction-service` | `transaction-service/Dockerfile` (`eclipse-temurin:17-jre-alpine`) | `8082` | Transaction Spring Boot Microservice |
+| 9 | `withdrawal-service` | `withdrawal-service/Dockerfile` (`eclipse-temurin:17-jre-alpine`) | `8081` | Withdrawal Spring Boot Microservice |
 
 ### Detailed Container Descriptions
 
@@ -884,7 +884,7 @@ Returns all rows from `withdrawal_transactions` ordered by `created_at`.
 cd c:\Users\Sonux\Desktop\banking-poc
 docker-compose up -d
 ```
-Wait 20–30 seconds for all 7 containers to initialize.
+Wait 20–30 seconds for all 9 containers to initialize.
 
 ### Step 2: Start Microservices
 
