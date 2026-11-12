@@ -1,0 +1,152 @@
+version: '3.8'
+
+services:
+  # 1. YugabyteDB Single-Node Cluster (PostgreSQL wire compatible on port 5433)
+  yugabyte:
+    image: yugabytedb/yugabyte:latest
+    container_name: banking-yugabyte
+    hostname: banking-yugabyte
+    command: bin/yugabyted start --daemon=false --ui=false
+    environment:
+      - PGHOST=banking-yugabyte
+      - PGPORT=5433
+      - PGUSER=yugabyte
+      - PGDATABASE=yugabyte
+    ports:
+      - "5433:5433" # YSQL API port
+      - "7000:7000" # Master UI
+      - "9000:9000" # TServer UI
+    volumes:
+      - yb_data:/home/yugabyte/yb_data
+
+  # 2. Redis for Dapr Pub/Sub broker
+  redis:
+    image: redis:7-alpine
+    container_name: banking-redis
+    ports:
+      - "6379:6379"
+
+  # 3. PostgreSQL Database for Temporal Server Persistence
+  temporal-db:
+    image: postgres:15-alpine
+    container_name: temporal-db
+    environment:
+      - POSTGRES_USER=temporal
+      - POSTGRES_PASSWORD=temporal
+      - POSTGRES_DB=temporal
+    ports:
+      - "5432:5432"
+    volumes:
+      - temporal_pg_data:/var/lib/postgresql/data
+
+  # 4. Temporal Server
+  temporal:
+    image: temporalio/auto-setup:1.24.1
+    container_name: temporal-server
+    depends_on:
+      - temporal-db
+    environment:
+      - DB=postgres12
+      - DB_PORT=5432
+      - POSTGRES_USER=temporal
+      - POSTGRES_PWD=temporal
+      - POSTGRES_SEEDS=temporal-db
+    ports:
+      - "7233:7233"
+
+  # 5. Temporal Web UI
+  temporal-ui:
+    image: temporalio/ui:2.26.0
+    container_name: temporal-ui
+    depends_on:
+      - temporal
+    environment:
+      - TEMPORAL_ADDRESS=temporal:7233
+      - TEMPORAL_CORS_ORIGINS=http://localhost:8080
+    ports:
+      - "8080:8080"
+
+  # 6. Dapr Sidecar for Withdrawal Service
+  withdrawal-dapr:
+    image: daprio/daprd:1.13.0
+    container_name: withdrawal-dapr
+    command: [
+      "./daprd",
+      "--app-id=withdrawal-service",
+      "--app-port=8081",
+      "--app-channel-address=withdrawal-service",
+      "--dapr-http-port=3500",
+      "--dapr-grpc-port=50001",
+      "--resources-path=/components",
+      "--log-level=info"
+    ]
+    volumes:
+      - ./components:/components
+    ports:
+      - "3500:3500"
+      - "50001:50001"
+    depends_on:
+      - redis
+      - withdrawal-service
+
+  # 7. Dapr Sidecar for Transaction Service
+  transaction-dapr:
+    image: daprio/daprd:1.13.0
+    container_name: transaction-dapr
+    command: [
+      "./daprd",
+      "--app-id=transaction-service",
+      "--app-port=8082",
+      "--app-channel-address=transaction-service",
+      "--dapr-http-port=3501",
+      "--dapr-grpc-port=50002",
+      "--resources-path=/components",
+      "--log-level=info"
+    ]
+    volumes:
+      - ./components:/components
+    ports:
+      - "3501:3501"
+      - "50002:50002"
+    depends_on:
+      - redis
+      - transaction-service
+
+  # 8. Transaction Service (Spring Boot Microservice)
+  transaction-service:
+    build:
+      context: ./transaction-service
+      dockerfile: Dockerfile
+    container_name: transaction-service
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://banking-yugabyte:5433/yugabyte
+      - DAPR_HTTP_HOST=transaction-dapr
+      - DAPR_HTTP_PORT=3501
+      - DAPR_DIRECT_FALLBACK_URL=http://withdrawal-service:8081/events/transaction-results
+    ports:
+      - "8082:8082"
+    depends_on:
+      - yugabyte
+      - redis
+
+  # 9. Withdrawal Service (Spring Boot Microservice)
+  withdrawal-service:
+    build:
+      context: ./withdrawal-service
+      dockerfile: Dockerfile
+    container_name: withdrawal-service
+    environment:
+      - TEMPORAL_TARGET=temporal:7233
+      - DAPR_HTTP_HOST=withdrawal-dapr
+      - DAPR_HTTP_PORT=3500
+      - DAPR_DIRECT_FALLBACK_URL=http://transaction-service:8082/events/withdrawal-requests
+    ports:
+      - "8081:8081"
+    depends_on:
+      - temporal
+      - redis
+
+volumes:
+  yb_data:
+  temporal_pg_data:
+

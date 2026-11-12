@@ -1,0 +1,173 @@
+{
+  "info": {
+    "name": "Dapr Temporal POC - Temporal, Dapr & YugabyteDB",
+    "_postman_id": "89b5a2bf-37c2-4a0b-a63e-banking-poc-101",
+    "description": "Collection to execute the 4 main Banking POC demonstration tests.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Test 1 - Setup: Seed Account ACC-101 with \u20b910,000",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"accountId\": \"ACC-101\",\n  \"balance\": 10000.00\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8082/api/accounts",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8082",
+          "path": ["api", "accounts"]
+        }
+      }
+    },
+    {
+      "name": "Test 1 - Execute: Withdraw \u20b93,000 (Temporal + Dapr + YugabyteDB)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"requestId\": \"req-t1-001\",\n  \"accountId\": \"ACC-101\",\n  \"amount\": 3000.00\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8081/api/withdrawals",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8081",
+          "path": ["api", "withdrawals"]
+        }
+      }
+    },
+    {
+      "name": "Test 1 - Verify: Check Account ACC-101 Balance (Expected \u20b97,000)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8082/api/accounts/ACC-101",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8082",
+          "path": ["api", "accounts", "ACC-101"]
+        }
+      }
+    },
+    {
+      "name": "Test 2 - Setup: Seed Account ACC-102 with \u20b91,000",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"accountId\": \"ACC-102\",\n  \"balance\": 1000.00\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8082/api/accounts",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8082",
+          "path": ["api", "accounts"]
+        }
+      }
+    },
+    {
+      "name": "Test 2 - Execute: Withdraw \u20b95,000 (Insufficient Balance)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"requestId\": \"req-t2-002\",\n  \"accountId\": \"ACC-102\",\n  \"amount\": 5000.00\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8081/api/withdrawals",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8081",
+          "path": ["api", "withdrawals"]
+        }
+      }
+    },
+    {
+      "name": "Test 2 - Verify: Check Account ACC-102 Balance (Remains \u20b91,000)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8082/api/accounts/ACC-102",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8082",
+          "path": ["api", "accounts", "ACC-102"]
+        }
+      }
+    },
+    {
+      "name": "Test 3 - Execute: Live Temporal Activity Retry (Simulates 2 Failures then Success)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"requestId\": \"retry-live-demo-001\",\n  \"accountId\": \"ACC-101\",\n  \"amount\": 1000.00\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8081/api/withdrawals",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8081",
+          "path": ["api", "withdrawals"]
+        }
+      }
+    },
+    {
+      "name": "Idempotency - Repeat Request req-t1-001 (Duplicate Check)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"requestId\": \"req-t1-001\",\n  \"accountId\": \"ACC-101\",\n  \"amount\": 3000.00\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8081/api/withdrawals",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8081",
+          "path": ["api", "withdrawals"]
+        }
+      }
+    },
+    {
+      "name": "Audit - View All YugabyteDB Transactions",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8082/api/transactions",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8082",
+          "path": ["api", "transactions"]
+        }
+      }
+    }
+  ]
+}
+
