@@ -1,12 +1,14 @@
+name: dapr-temporal-poc
+
 services:
   # 1. YugabyteDB Single-Node Cluster (PostgreSQL wire compatible on port 5433)
   yugabyte:
     image: yugabytedb/yugabyte:latest
-    container_name: banking-yugabyte
-    hostname: banking-yugabyte
+    container_name: dt-yugabyte
+    hostname: dt-yugabyte
     command: bin/yugabyted start --daemon=false --ui=false
     environment:
-      - PGHOST=banking-yugabyte
+      - PGHOST=dt-yugabyte
       - PGPORT=5433
       - PGUSER=yugabyte
       - PGDATABASE=yugabyte
@@ -20,14 +22,14 @@ services:
   # 2. Redis for Dapr Pub/Sub broker
   redis:
     image: redis:7-alpine
-    container_name: banking-redis
+    container_name: dt-redis
     ports:
       - "6379:6379"
 
   # 3. PostgreSQL Database for Temporal Server Persistence
   temporal-db:
     image: postgres:15-alpine
-    container_name: temporal-db
+    container_name: dt-temporal-db
     environment:
       - POSTGRES_USER=temporal
       - POSTGRES_PASSWORD=temporal
@@ -40,7 +42,7 @@ services:
   # 4. Temporal Server
   temporal:
     image: temporalio/auto-setup:1.24.1
-    container_name: temporal-server
+    container_name: dt-temporal-server
     depends_on:
       - temporal-db
     environment:
@@ -55,7 +57,7 @@ services:
   # 5. Temporal Web UI
   temporal-ui:
     image: temporalio/ui:2.26.0
-    container_name: temporal-ui
+    container_name: dt-temporal-ui
     depends_on:
       - temporal
     environment:
@@ -67,7 +69,7 @@ services:
   # 6. Dapr Sidecar for Withdrawal Service
   withdrawal-dapr:
     image: daprio/daprd:1.13.0
-    container_name: withdrawal-dapr
+    container_name: dt-withdrawal-dapr
     command: [
       "./daprd",
       "--app-id=withdrawal-service",
@@ -90,7 +92,7 @@ services:
   # 7. Dapr Sidecar for Transaction Service
   transaction-dapr:
     image: daprio/daprd:1.13.0
-    container_name: transaction-dapr
+    container_name: dt-transaction-dapr
     command: [
       "./daprd",
       "--app-id=transaction-service",
@@ -115,9 +117,10 @@ services:
     build:
       context: .
       dockerfile: transaction-service/Dockerfile
-    container_name: transaction-service
+    container_name: dt-transaction-service
+    restart: on-failure
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://banking-yugabyte:5433/yugabyte
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://dt-yugabyte:5433/yugabyte
       - DAPR_HTTP_HOST=transaction-dapr
       - DAPR_HTTP_PORT=3501
       - DAPR_DIRECT_FALLBACK_URL=http://withdrawal-service:8081/events/transaction-results
@@ -132,7 +135,8 @@ services:
     build:
       context: .
       dockerfile: withdrawal-service/Dockerfile
-    container_name: withdrawal-service
+    container_name: dt-withdrawal-service
+    restart: on-failure
     environment:
       - TEMPORAL_TARGET=temporal:7233
       - DAPR_HTTP_HOST=withdrawal-dapr
